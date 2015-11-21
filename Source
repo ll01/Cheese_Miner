@@ -1,0 +1,141 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Cheese_Miner
+{
+    struct Player
+    {
+        public string Name;
+        public int Position_X;
+        public int Position_Y;
+        public int Score;
+        // public string Colour;
+    }
+
+
+    struct board
+    {
+        //public int position;
+        public bool cheese;
+        // Players also need to be stored 
+    }
+    class Program
+    {
+        static int Array_Size = 4;
+        static Player[] Players = new Player[Array_Size];
+
+
+        //making 8 by 8 grid 
+        static board[,] Grid = new board[8, 8];
+
+
+        //Prosedures and functions
+ 
+        //player stats
+        static void ShowStatus()
+        {
+            Console.WriteLine("there are " + Player_Number + "players in the game");
+            for (int i = 0; i < Player_Number; i++)
+            {
+                Console.WriteLine(Players[i].Name + "is on squaure " + "(" + Players[i].Position_X + "," + Players[i].Position_Y + ") and has"+ Players[i].Score +"cheeses");
+            }
+        }
+        //tempory die 
+        static int DieThrow()
+        {
+            Console.WriteLine("Enter dice value: ");
+            int Die_Value = int.Parse(Console.ReadLine());
+            return Die_Value;
+
+        }
+
+        //player movement 
+        static void PLayer_Movement(int Player_Number, int Distance ,char Direction)
+        {
+            Console.WriteLine("Moving " + Players[Player_Number].Name);
+            Direction = Char.ToUpper(Direction);
+            switch (Direction)
+
+
+        }
+
+        // global variables  
+        static int Player_Number;
+        static int Cheese_X_Position;
+        static int Cheese_Y_Position;
+        
+        
+       
+        static void Main(string[] args)
+        {
+
+            Console.WriteLine("Enter the amount of Players");
+              Player_Number = int.Parse(Console.ReadLine());
+            //adding names and setting scores to 0 
+            for (int i = 0; i < Player_Number; i++)
+            {
+                Console.WriteLine("Enter the names of the Player " + i);
+                Players[i].Name = Console.ReadLine();
+
+                Players[i].Score = 0;
+            }
+            // setting inital positions in the grid 
+            Players[0].Position_X = 0;
+            Players[0].Position_Y = 0;
+
+            Players[1].Position_X = 0;
+            Players[1].Position_Y = 7;
+
+            Players[2].Position_X = 7;
+            Players[2].Position_Y = 0;
+
+            Players[3].Position_X = 7;
+            Players[3].Position_Y = 7;
+            // clears Grid
+            for (int i = 0; i < 7; i++)
+            {
+                for (int j = 0; j < 7; j++)
+                {
+                    Grid[i, j].cheese = false;
+                }
+            }
+            int Cheese_Limit = 4 * Player_Number;
+            int Cheese_Number = 0;
+
+            //Imputs cheese to the Grid  
+            do
+            {
+                for (int i = 0; i < Player_Number + 1; i++)
+                {
+                    if (i < Player_Number)
+                    {
+                        Console.WriteLine(" " + Players[i].Name + "  pick a X co-ordienet for the cheese ");
+                         Cheese_X_Position = int.Parse(Console.ReadLine());
+                        Console.WriteLine(" " + Players[i].Name + "  pick a Y co-ordienet for the cheese ");
+                         Cheese_Y_Position = int.Parse(Console.ReadLine());
+
+                        Grid[Cheese_X_Position, Cheese_Y_Position].cheese = true;
+                        Cheese_Number++;
+                    }
+                    else
+                    {
+                        i = 0;
+                        break;
+                    }
+
+                }
+
+            } while (Cheese_Number + 1 < Cheese_Limit);
+
+
+
+
+
+
+        }
+
+    }
+}
