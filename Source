@@ -20,7 +20,16 @@ namespace Cheese_Miner
     }
 
     class Program
-    {
+    {   
+        /// <summary>
+        /// reading of integers
+        /// </summary>
+        /// <param name="Max"> maximum valuse</param>
+        /// <param name="Min"> minimum value</param>
+        /// <param name="Data"> data inputed in to the function</param>
+        /// <returns>
+        /// labels for the idiot proof data checks 
+        /// </returns>
         static int Array_Size = 4;
         static Player[] Players = new Player[Array_Size];
 
@@ -224,6 +233,7 @@ namespace Cheese_Miner
                     {
                         Console.WriteLine(" " + Players[i].Name + "  pick a X co-ordienet for the cheese ");
                         Cheese_X_Position = int.Parse(Console.ReadLine());
+                        Data_Check_int(Max: Board_Size_Max - 1, Min: 0, Data: Cheese_X_Position);
                         Console.WriteLine(" " + Players[i].Name + "  pick a Y co-ordienet for the cheese ");
                         Cheese_Y_Position = int.Parse(Console.ReadLine());
 
@@ -262,22 +272,7 @@ namespace Cheese_Miner
             } while (Cheese_Number + 1 < Cheese_Limit);
         }
 
-        static int Data_Check(int Max_Check, int Min_Check)
-        {
-            string Data_Check_Sring = Console.ReadLine();
-            
-                try
-                {
-                    int Data_Check_Number = int.Parse(Data_Check_Sring);
-                    return Data_Check_Number;
-                }
-                catch
-                {
-                    Console.WriteLine("Value must be between " + Max_Check + " and " + Min_Check);
-                    continue;
-                }
-            }
-        
+      
         static void Move_Number_Name_Conversion(string Move_Name)
         {
             for (int j = 0; j < Player_Number; j++)
@@ -313,15 +308,110 @@ namespace Cheese_Miner
 
             }
         }
+
+        // IDIOT PROOF COAD
+        static int Data_Check_int(int Max_Check, int Min_Check, string Data_Check_Sring)
+        {
+            do
+            {
+                try
+                {
+                    int Data_Check_Number = int.Parse(Data_Check_Sring);
+                    if (Data_Check_Number > Max_Check)
+                    {
+                        Console.WriteLine("Number is too high enter again");
+                        Data_Check_Sring = Console.ReadLine();
+                        continue;
+                    }
+
+                    if (Data_Check_Number < Min_Check)
+                    {
+                        Console.WriteLine("Number is too low enter again");
+                        Data_Check_Sring = Console.ReadLine();
+                        continue;
+                    }
+                    else
+                    {
+                        return Data_Check_Number;
+                    }
+                }
+                catch
+                {
+                    Console.WriteLine("Value must be a number between " + Max_Check + " and " + Min_Check);
+                    Data_Check_Sring = Console.ReadLine();
+                    continue;
+                }
+            } while (true);
+        }
+        static void Data_Check_Player_Name( string Name_Imput)
+        {
+            for(int i = 0; i < Player_Number; i++)
+            {
+                if (Name_Imput.ToLower() == Players[i].Name.ToLower())
+                {
+                    break;
+                }
+
+                else if (Name_Imput != Players[i].Name)
+                {
+                    Console.WriteLine("You have enterd an invalid name please input a valid name");
+                    Name_Imput = Console.ReadLine();               
+                    continue;
+                }
+               
+            }
+        }
+
+        static char Data_Check_Char(string Char_Imput_String)
+        {
+
+            do
+            {
+                try
+                { 
+                char Char_Imput = char.Parse(Console.ReadLine());
+                
+                
+                    if ((char.ToUpper(Char_Imput) == 'N') ||
+                        (char.ToUpper(Char_Imput) == 'E') ||
+                        (char.ToUpper(Char_Imput) == 'W') ||
+                        (char.ToUpper(Char_Imput) == 'S'))
+                    {
+
+                        return Char_Imput;
+                    }
+
+                    else if ((char.ToUpper(Char_Imput) != 'N') ||
+                             (char.ToUpper(Char_Imput) != 'E') ||
+                             (char.ToUpper(Char_Imput) != 'W') ||
+                             (char.ToUpper(Char_Imput) != 'S'))
+                    {
+                        Console.WriteLine("You have enterd an invalid Direction please input a valid name");
+                        Char_Imput = char.Parse(Console.ReadLine());
+                        continue;
+                    }
+                }
+                catch
+                {
+                    Console.WriteLine(" please enter a char ");
+                     Char_Imput_String = Console.ReadLine();
+                    continue;
+                }
+                
+            } while (true);
+        }
+        
         static void Main(string[] args)
         {
 
             Console.WriteLine("Enter the amount of Players");
-            Player_Number = int.Parse(Console.ReadLine());
+             string Player_Number_String = Console.ReadLine();
+             Player_Number = Data_Check_int( 4, 2, Player_Number_String);
             //adding names and setting scores to 0 
             for (int i = 0; i < Player_Number; i++)
             {
-                Console.WriteLine("Enter the names of the Player " + i);
+                int Display_Num = i + 1;
+                Console.WriteLine("Enter the name of Player " + Display_Num);
                 Players[i].Name = Console.ReadLine();
 
                 Players[i].Score = 0;
@@ -346,20 +436,22 @@ namespace Cheese_Miner
             }
 
             Clear_Grid();
-             Cheese_Imput();
+             //Cheese_Imput();
             do
             {
                 for (int i = 0; i < Player_Number; i++)
                 {
                     Console.WriteLine("enter your players Name ");
                     string Move_Number_String = Console.ReadLine();
+                    Data_Check_Player_Name(Move_Number_String);
                     Move_Number_Name_Conversion(Move_Number_String);
+
+
                     Console.WriteLine("enter your player direction ");
-                    char move_direction = char.Parse(Console.ReadLine());
+                    string move_direction = Console.ReadLine();                 
 
 
-
-                    Player_Movement(Move_Player_Number, DieThrow(), move_direction);
+                    Player_Movement(Move_Player_Number, DieThrow(), Data_Check_Char(move_direction));
 
                     ShowStatus();
                     Win_Conditon();
@@ -378,4 +470,3 @@ warp
 idiot proof ?
 */
 }
-
