@@ -25,18 +25,17 @@ namespace Cheese_Miner
         static int Array_Size = 4;
         static Player[] Players = new Player[Array_Size];
 
-
         //making 8 by 8 grid 
         static int Board_Size_Max = 8;
         static board[,] Grid = new board[Board_Size_Max, Board_Size_Max];
 
-
-
         // global variables  
+        static string winner;
         static List<int> Same_Space_Players = new List<int>();
         static int Player_Number;
         static int Move_Player_Number;
         static bool End_Game = false;
+        static bool restart = true;
 
 
 
@@ -48,13 +47,15 @@ namespace Cheese_Miner
             Console.WriteLine("there are " + Player_Number + " players in the game");
             for (int i = 0; i < Player_Number; i++)
             {
-                Console.WriteLine(Players[i].Name + " is on squaure " + "(" + Players[i].X_Position + "," + Players[i].Y_Position + ") and has " + Players[i].Score + " cheeses");
+                //x and y need to be swaped becaus the bord draws horazontaly so there is less wasted space on console
+                Console.WriteLine(Players[i].Name + " is on squaure " + "(" + Players[i].Y_Position + "," + Players[i].X_Position + ") and has " + Players[i].Score + " cheeses");
             }
         }
 
-
+        //PLAYER HANDALING 
         static void Player_Movement(int Current_Player_Number, int Distance, char Direction)
         {
+            Clear_player_population();
             Console.WriteLine("Moving " + Players[Current_Player_Number].Name);
             //deleates old bord space 
             Grid[Players[Current_Player_Number].X_Position, Players[Current_Player_Number].Y_Position].Player_Populate = false;
@@ -87,17 +88,8 @@ namespace Cheese_Miner
             Cheese_Detection(Current_Player_Number);
             Player_Detection(Current_Player_Number);
             clear_all_same_player();
-            Console.Clear();
-            Display_Board();
-        }
+            Grid[Players[Current_Player_Number].X_Position, Players[Current_Player_Number].Y_Position].Player_Populate = true;
 
-        static void Cheese_Detection(int Current_Player_Number)
-        {
-            if (Grid[Players[Current_Player_Number].X_Position, Players[Current_Player_Number].Y_Position].cheese == true)
-            {
-                Grid[Players[Current_Player_Number].X_Position, Players[Current_Player_Number].Y_Position].cheese = false;
-                Players[Current_Player_Number].Score = Players[Current_Player_Number].Score + 1;
-            }
         }
 
         static void clear_all_same_player()
@@ -108,11 +100,16 @@ namespace Cheese_Miner
             }
         }
 
+        static void Clear_player_population()
+        {
+            for (int i = 0; i < 7; i++)
+                for (int x = 0; x < 7; x++)
+                    Grid[i, x].Player_Populate = false;
+        }
+
         static void Player_Detection(int Current_Player_Number)
         {
-
             int i = 0;
-
             List<int> players_to_search = new List<int>();
             for (int x = 0; x < Player_Number; x++)
             {
@@ -121,25 +118,18 @@ namespace Cheese_Miner
             players_to_search.RemoveAt(Current_Player_Number);
             foreach (int j in players_to_search)
             {
-                //    Console.WriteLine(players_to_search[j-1]);
-
                 if (Players[Current_Player_Number].X_Position == Players[j].X_Position && Players[Current_Player_Number].Y_Position == Players[j].Y_Position)
                 {
                     Same_Space_Players.Add(i);
                     i++;
                 }
-
-
-
             }
-
+            //CHEESE STEAL MECHANICS (big so gave own sub hedading )
             Cheese_Steal_Multi(Current_Player_Number, Same_Space_Players);
             foreach (int p in players_to_search)
-                //
                 if (Same_Space_Players.Count == 1)
                 {
                     Players[Current_Player_Number].Score++;
-
                     // 0 = only one there 
                     Players[Same_Space_Players[0]].Score--;
                     if (Players[Same_Space_Players[0]].Score < 0)
@@ -148,6 +138,7 @@ namespace Cheese_Miner
                     }
                     break;
                 }
+            Win_Conditon();
             for (i = 0; i < players_to_search.Count; i++)
             {
                 players_to_search.RemoveAt(i);
@@ -156,7 +147,6 @@ namespace Cheese_Miner
 
         static void Cheese_Steal_Multi(int Current_Player_Number, List<int> Players_To_Search)
         {
-
             int Victim_Number;
             int Victim;
             for (int i = 0; i < Same_Space_Players.Count; i++)
@@ -170,12 +160,10 @@ namespace Cheese_Miner
             {
                 return;
             }
-
             if (Same_Space_Players.Count == 2)
             {
                 for (int j = 0; j < Same_Space_Players.Count; j++)
                 {
-                    // Console.WriteLine(Players[j].Score);
                     int Next = j + 1;
                     Console.WriteLine(Next + " ." + Players[Same_Space_Players[j]].Name + " has " + Players[Same_Space_Players[j]].Score + " cheeses");
                 }
@@ -189,12 +177,9 @@ namespace Cheese_Miner
                     case 1:
                         Players[Same_Space_Players[Victim]].Score--;
                         break;
-
                     case 2:
                         Players[Same_Space_Players[Victim]].Score--;
                         break;
-
-
                 }
 
                 if (Same_Space_Players.Count == 3)
@@ -237,7 +222,77 @@ namespace Cheese_Miner
             return Die_Value;
         }
 
+        // CHEESSE INTERACTIONS 
+        static void Cheese_Detection(int Current_Player_Number)
+        {
+            if (Grid[Players[Current_Player_Number].X_Position, Players[Current_Player_Number].Y_Position].cheese == true)
+            {
+                Grid[Players[Current_Player_Number].X_Position, Players[Current_Player_Number].Y_Position].cheese = false;
+                Players[Current_Player_Number].Score = Players[Current_Player_Number].Score + 1;
+            }
+            Win_Conditon();
+        }
 
+        static void Cheese_Imput()
+        {
+            //int Cheese_Limit = 4 * Player_Number;
+            int Cheese_Limit = 16;
+            int Cheese_Number = 0;
+            int Cheese_X_Position;
+            int Cheese_Y_Position;
+            //Imputs cheese to the Grid  
+            do
+            {
+                for (int i = 0; i < Player_Number + 1; i++)
+                {
+                    if (i < Player_Number)
+                    {
+                        Console.WriteLine(" " + Players[i].Name + "  pick a X co-ordienet for the cheese ");
+                        string Cheese_X_Position_string = Console.ReadLine();
+                        Cheese_X_Position = Data_Check_int(Board_Size_Max - 1, 0, Cheese_X_Position_string);
+
+                        Console.WriteLine(" " + Players[i].Name + "  pick a Y co-ordienet for the cheese ");
+                        string Cheese_Y_Position_string = Console.ReadLine();
+                   Cheese_Y_Position = Data_Check_int(Board_Size_Max - 1, 0, Cheese_Y_Position_string);
+                        Console.Clear();
+
+                        if ((Grid[Cheese_X_Position, Cheese_Y_Position].cheese == true) ||
+                            (Cheese_X_Position == 0 && Cheese_Y_Position == 0) ||
+                            (Cheese_X_Position == 0 && Cheese_Y_Position == Board_Size_Max - 1) ||
+                            (Cheese_X_Position == Board_Size_Max - 1 && Cheese_Y_Position == 0) ||
+                            (Cheese_X_Position == Board_Size_Max - 1 && Cheese_Y_Position == Board_Size_Max - 1))
+                        {
+                            do
+                            {
+                                Console.Clear();
+                                Console.WriteLine("you have enterd a space that alredy has a cheese or a player is in that space in try another  ");
+                                Console.WriteLine(" " + Players[i].Name + "  pick a X co-ordienet for the cheese ");
+                                Cheese_X_Position_string = Console.ReadLine();
+                                Cheese_X_Position = Data_Check_int(Board_Size_Max - 1, 0, Cheese_X_Position_string);
+
+                                Console.WriteLine(" " + Players[i].Name + "  pick a Y co-ordienet for the cheese ");
+                                Cheese_Y_Position_string = Console.ReadLine();
+                                Cheese_Y_Position = Data_Check_int(Board_Size_Max - 1, 0, Cheese_Y_Position_string);
+                                Console.Clear();
+                                //change
+                            } while (Grid[Cheese_X_Position, Cheese_Y_Position].cheese == true);
+                        }
+                        else if (Grid[Cheese_X_Position, Cheese_Y_Position].cheese == false)
+                        {
+                            Grid[Cheese_X_Position, Cheese_Y_Position].cheese = true;
+                            Cheese_Number++;
+                        }
+                    }
+                    else
+                    {
+                        i = 0;
+                        break;
+                    }
+                }
+            } while (Cheese_Number + 1 < Cheese_Limit);
+        }
+
+        //RNCESUS
         static void RNG_Cheese(int Number_of_Cheese)
         {
             Random rng_Cheese = new Random();
@@ -247,8 +302,6 @@ namespace Cheese_Miner
             int i = 0;
             do
             {
-
-
                 if ((Grid[Cheese_X_Position, Cheese_Y_Position].cheese == true) ||
             (Cheese_X_Position == 0 && Cheese_Y_Position == 0) ||
             (Cheese_X_Position == 0 && Cheese_Y_Position == Board_Size_Max - 1) ||
@@ -265,111 +318,38 @@ namespace Cheese_Miner
                     i++;
                     Cheese_X_Position = rng_Cheese.Next(0, Board_Size_Max);
                     Cheese_Y_Position = rng_Cheese.Next(0, Board_Size_Max);
-
                 }
             } while (i < Number_of_Cheese);
-
-        }
-        static void Cheese_Imput()
-        {
-            //int Cheese_Limit = 4 * Player_Number;
-            int Cheese_Limit = 16;
-            int Cheese_Number = 0;
-
-            int Cheese_X_Position;
-            int Cheese_Y_Position;
-
-            //Imputs cheese to the Grid  
-            do
-            {
-
-                for (int i = 0; i < Player_Number + 1; i++)
-                {
-
-                    if (i < Player_Number)
-                    {
-                        Console.WriteLine(" " + Players[i].Name + "  pick a X co-ordienet for the cheese ");
-                        string Cheese_X_Position_string = Console.ReadLine();
-                        Cheese_X_Position = Data_Check_int(Board_Size_Max - 1, 0, Cheese_X_Position_string);
-
-                        Console.WriteLine(" " + Players[i].Name + "  pick a Y co-ordienet for the cheese ");
-                        string Cheese_Y_Position_string = Console.ReadLine();
-                        Cheese_Y_Position = Data_Check_int(Board_Size_Max - 1, 0, Cheese_Y_Position_string);
-
-                        if ((Grid[Cheese_X_Position, Cheese_Y_Position].cheese == true) ||
-                            (Cheese_X_Position == 0 && Cheese_Y_Position == 0) ||
-                            (Cheese_X_Position == 0 && Cheese_Y_Position == Board_Size_Max - 1) ||
-                            (Cheese_X_Position == Board_Size_Max - 1 && Cheese_Y_Position == 0) ||
-                            (Cheese_X_Position == Board_Size_Max - 1 && Cheese_Y_Position == Board_Size_Max - 1))
-                        {
-                            do
-                            {
-                                Console.WriteLine("you have enterd a space that alredy has a cheese or a player is in that space in try another  ");
-                                Console.WriteLine(" " + Players[i].Name + "  pick a X co-ordienet for the cheese ");
-                                Cheese_X_Position = int.Parse(Console.ReadLine());
-                                Console.WriteLine(" " + Players[i].Name + "  pick a Y co-ordienet for the cheese ");
-                                Cheese_Y_Position = int.Parse(Console.ReadLine());
-                                //change
-                            } while (Grid[Cheese_X_Position, Cheese_Y_Position].cheese == true);
-                        }
-
-                        else if (Grid[Cheese_X_Position, Cheese_Y_Position].cheese == false)
-                        {
-                            Grid[Cheese_X_Position, Cheese_Y_Position].cheese = true;
-                            Cheese_Number++;
-                        }
-
-                    }
-                    else
-                    {
-                        i = 0;
-                        break;
-                    }
-
-                }
-
-            } while (Cheese_Number + 1 < Cheese_Limit);
         }
 
-
-
-
-
+        //BOARD MANIPULATION
         static void Clear_Grid()
         {
             for (int i = 0; i < Board_Size_Max - 1; i++)
-            {
                 for (int j = 0; j < Board_Size_Max - 1; j++)
-                {
                     Grid[i, j].cheese = false;
-                }
-            }
         }
-
-        static void Win_Conditon(int i)
+        static void Score_And_Player_Population_Set()
         {
-
-            if (Players[i].Score >= 6)
+            for (int i = 0; i < Player_Number; i++)
             {
-                Console.WriteLine(Players[i].Name + " WINS!!!");
-                End_Game = true;
-
+                Players[i].Score = 0;
+                Grid[Players[i].X_Position, Players[i].Y_Position].Player_Populate = true;
             }
-
-
         }
+
         // board display
         static void Display_Board()
         {
-            int X;
-            int Y;
-            for (Y = 0; Y < Board_Size_Max; Y++)
+            /*
+            for (int Y = 0; Y < Board_Size_Max; Y++)
             {
-                for (X = 0; X < Board_Size_Max; X++)
+                for (int X = 0; X < Board_Size_Max; X++)
                 {
                     if (Grid[X, Y].cheese == true)
                     {
                         Console.Write("C");
+                        
                     }
                     if ((Grid[X, Y].Player_Populate == true) && (Grid[X, Y].cheese == false))
                     {
@@ -378,21 +358,80 @@ namespace Cheese_Miner
                             if ((X == Players[k].X_Position) && (Y == Players[k].Y_Position))
                             {
                                 Console.Write("P");
-                                Grid[X, Y].Player_Populate = true;
                             }
                         }
                     }
                     if (Grid[X, Y].cheese == false && Grid[X, Y].Player_Populate == false)
                     {
-                        Console.Write("X");
+                        Console.Write("X");   
                     }
+                    Console.Write("|");
+                  Console.Write("--");
                 }
-                Console.WriteLine("");
+                Console.WriteLine();
+            }*/
+
+            int Board_Display_Max = 27;
+            int Board_Display_X;
+            int Board_Display_Y;
+            int Board_Display_Cheese_X;
+            int Board_Display_Cheese_Y;
+            for (int Y = 0; Y < Board_Display_Max; Y++)
+            {
+                for (int X = 0; X < Board_Display_Max; X++)
+                {
+                    for (int i = 0; i < Player_Number; i++)
+                    {
+                        Board_Display_X = (3 * Players[i].X_Position + 2);
+                        Board_Display_Y = (3 * Players[i].Y_Position + 2);
+                        Board_Display_Cheese_X = (X - 2) / 3;
+                        Board_Display_Cheese_Y = (Y - 2) / 3;
+                        if ((X == Board_Display_X) && (Y == Board_Display_Y))
+                        {
+                            Console.Write("p");
+
+                        }
+
+
+                        else if ((X == 0) || (Y == 0) || (X == Board_Display_Max - 1) || (Board_Display_Max - 1 == Y) || ((X % 3 == 1) || (Y % 3 == 1)))
+                        {
+                            Console.Write("*");
+                        }
+
+                        else if (Grid[Board_Display_Cheese_X, Board_Display_Cheese_Y].cheese == true)
+                        {
+                            Console.Write("C");
+
+                        }
+                        else
+                        {
+                            Console.Write(" ");
+                        }
+
+                    }
+
+
+                }
+                Console.WriteLine();
             }
 
         }
 
 
+        //GAME STATE
+        static void Win_Conditon()
+        {
+            for (int i = 0; i < Player_Number; i++)
+            {
+                if (Players[i].Score >= 6)
+                {
+                    Console.WriteLine(Players[i].Name + " WINS!!!");
+                    winner = Players[i].Name;
+                    End_Game = true;
+
+                }
+            }
+        }
 
         // IDIOT PROOF COAD
         static int Data_Check_int(int Max_Check, int Min_Check, string Data_Check_Sring)
@@ -439,18 +478,14 @@ namespace Cheese_Miner
                 {
                     return;
                 }
-
             }
-
             Console.WriteLine("You have enterd an invalid name please input a valid name");
             Name_Imput = Console.ReadLine();
             // goes back to check that playern name again 
-
         }
 
         static char Data_Check_Char(string Char_Imput_String)
         {
-
             do
             {
                 try
@@ -491,7 +526,6 @@ namespace Cheese_Miner
         {
             do
             {
-
                 Console.WriteLine(Promt);
                 try
                 {
@@ -514,180 +548,190 @@ namespace Cheese_Miner
                 }
 
             } while (true);
-
         }
 
         static void Main(string[] args)
         {
-            string Test_Prompt = "Test Mode Y or N";
-            char Test_Mode = User_Mode_Data_Check(Test_Prompt);
-
-
-
-            Console.Clear();
-            Console.WriteLine("Enter the amount of Players");
-            string Player_Number_String = Console.ReadLine();
-            Player_Number = Data_Check_int(4, 2, Player_Number_String);
-            Console.Clear();
-
-            // setting inital positions in the grid 
-            // delibertly left these as numbers cause helps with 5ebugging 
-            Players[0].X_Position = 0;
-            Players[0].Y_Position = 0;
-
-            Players[1].X_Position = 7;
-            Players[1].Y_Position = 0;
-
-            Players[2].X_Position = 0;
-            Players[2].Y_Position = 7;
-
-            Players[3].X_Position = 7;
-            Players[3].Y_Position = 7;
-
-            Clear_Grid();
-
-
-            if (Test_Mode == 'N')
+            do
             {
-                //  setting scores to 0 
-                for (int i = 0; i < Player_Number; i++)
-                {
-                    Players[i].Score = 0;
-                    Grid[Players[i].X_Position, Players[i].Y_Position].Player_Populate = true;
-                }
+                string Test_Prompt = "Test Mode Y or N";
+                char Test_Mode = User_Mode_Data_Check(Test_Prompt);
 
-                string Cheese_Prompt = "Do you want to auto place cheese";
-                char Cheese_Auto = User_Mode_Data_Check(Cheese_Prompt);
-                if (Cheese_Auto == 'N')
-                {
-                    Cheese_Imput();
-                }
-                else
-                {
-                    int Cheese_Max = 16;
-                    RNG_Cheese(Cheese_Max);
-                    Display_Board();
-                }
-                for (int i = 0; i < Player_Number; i++)
-                {
-                    int Next = i + 1;
-                    Console.WriteLine("Enter the name of player " + Next + "");
-                    Players[i].Name = Console.ReadLine();
-                }
-                do
-                {
+                Console.Clear();
 
 
-                    for (int i = 0; i < Player_Number; i++)
-                    {
-                        Console.WriteLine("enter moving players Name ");
-                        string Move_Number_String = Console.ReadLine();
-                        Data_Check_Player_Name(Move_Number_String);
-                        Move_Player_Number = i;
-
-                        int Move_Die_roll = Die_Throw_Random();
-                        Console.WriteLine(Move_Number_String + " rolled a " + Move_Die_roll);
-
-                        Display_Board();
-
-                        Console.WriteLine("enter your player direction ");
-                        string Move_Direction_String = Console.ReadLine();
-                        char Move_Direction = Data_Check_Char(Move_Direction_String);
-
-
-                        Player_Movement(Move_Player_Number, Move_Die_roll, Move_Direction);
-
-                        ShowStatus();
-                        Win_Conditon(Move_Player_Number);
-                    }
-                } while (End_Game == false);
-            }
-
-            if (Test_Mode == 'Y')
-            {
+                // setting inital positions in the grid 
+                // delibertly left these as numbers cause helps with 5ebugging 
                 Players[0].X_Position = 0;
                 Players[0].Y_Position = 0;
 
-                Players[1].X_Position = 5;
-                Players[1].Y_Position = 3;
+                Players[1].X_Position = 0;
+                Players[1].Y_Position = 7;
 
-                Players[2].X_Position = 0;
-                Players[2].Y_Position = 5;
+                Players[2].X_Position = 3;
+                Players[2].Y_Position = 3;
 
-                Players[3].X_Position = 5;
-                Players[3].Y_Position = 3;
-                //displaying inital position 
-                for (int i = 0; i < Player_Number; i++)
+                Players[3].X_Position = 0;
+                Players[3].Y_Position = 0;
+                Clear_Grid();
+
+                if (Test_Mode == 'N')
                 {
-                    Grid[Players[i].X_Position, Players[i].Y_Position].Player_Populate = true;
+                    Console.WriteLine("Enter the amount of Players");
+                    string Player_Number_String = Console.ReadLine();
+                    Player_Number = Data_Check_int(4, 2, Player_Number_String);
+                    Console.Clear();
+
+                    Score_And_Player_Population_Set();
+                    string Cheese_Prompt = "Do you want to auto place cheese";
+                    char Cheese_Auto = User_Mode_Data_Check(Cheese_Prompt);
+                    
+                    for (int i = 0; i < Player_Number; i++)
+                    {
+                        int Next = i + 1;
+                        Console.WriteLine("Enter the name of player " + Next + "");
+                        Players[i].Name = Console.ReadLine();
+                    }
+                    if (Cheese_Auto == 'N')
+                    {
+                        Cheese_Imput();
+                    }
+                    else
+                    {
+                        int Cheese_Max = 16;
+                        RNG_Cheese(Cheese_Max);
+                        Display_Board();
+                    }
+                    do
+                    {
+                        for (int i = 0; i < Player_Number; i++)
+                        {
+                            Console.WriteLine("enter moving players Name ");
+                            string Move_Number_String = Console.ReadLine();
+                            Data_Check_Player_Name(Move_Number_String);
+                            Move_Player_Number = i;
+
+                            int Move_Die_roll = Die_Throw_Random();
+                            Console.WriteLine(Move_Number_String + " rolled a " + Move_Die_roll);
+                            Display_Board();
+
+                            Console.WriteLine("enter your player direction ");
+                            string Move_Direction_String = Console.ReadLine();
+                            char Move_Direction = Data_Check_Char(Move_Direction_String);
+                            Console.Clear();
+
+                            Player_Movement(Move_Player_Number, Move_Die_roll, Move_Direction);
+
+
+
+
+                            ShowStatus();
+
+                        }
+
+                        string Reset_Prompt = "Dose everybody want to play again? Y/N";
+                        Console.WriteLine("congratulations " + winner + ". Dose everybody want to play again? Y/N");
+                        char Reset_Menu = User_Mode_Data_Check(Reset_Prompt);
+
+                        if (Reset_Menu == 'N')
+                        {
+                            restart = false;
+                        }
+                    } while (End_Game == false);
                 }
 
 
-
-                Players[0].Name = "Green";
-                Players[1].Name = "Yellow";
-                Players[3].Name = "Blue";
-                Players[2].Name = "Red";
-                Players[2].Score = 2;
-                Players[3].Score = 5;
-                Players[1].Score = 1;
-                Players[0].Score = 0;
-
-                //cheese placement
-                Grid[1, 0].cheese = true;
-                Grid[3, 6].cheese = true;
-                Grid[5, 3].cheese = true;
-                Grid[2, 7].cheese = true;
-                Grid[0, 5].cheese = true;
-                Grid[0, 1].cheese = true;
-                Grid[5, 5].cheese = true;
-                Grid[2, 4].cheese = true;
-                Grid[1, 3].cheese = true;
-                Grid[6, 1].cheese = true;
-                Grid[6, 2].cheese = true;
-                Grid[6, 7].cheese = true;
-                Grid[4, 5].cheese = true;
-                Grid[5, 0].cheese = true;
-                Grid[7, 6].cheese = true;
-                Grid[6, 0].cheese = true;
-                Display_Board();
-                string Move_Number_String;
-                do
+                if (Test_Mode == 'Y')
                 {
+                    Player_Number = 4;
 
-                    for (int x = 0; x < Player_Number; x++)
+                    Players[0].X_Position = 0;
+                    Players[0].Y_Position = 0;
+
+                    Players[1].X_Position = 7;
+                    Players[1].Y_Position = 0;
+
+                    Players[2].X_Position = 7;
+                    Players[2].Y_Position = 7;
+
+                    Players[3].X_Position = 0;
+                    Players[3].Y_Position = 7;
+                    Score_And_Player_Population_Set();
+
+                    Players[0].Name = "Green";
+                    Players[1].Name = "Yellow";
+                    Players[3].Name = "Blue";
+                    Players[2].Name = "Red";
+                    Players[2].Score = 0;
+                    Players[3].Score = 3;
+                    Players[1].Score = 0;
+                    Players[0].Score = 0;
+
+                    //cheese placement
+                    Grid[1, 0].cheese = true;
+                    Grid[3, 6].cheese = true;
+                    Grid[5, 3].cheese = true;
+                    Grid[2, 7].cheese = true;
+                    Grid[0, 5].cheese = true;
+                    Grid[0, 1].cheese = true;
+                    Grid[5, 5].cheese = true;
+                    Grid[2, 4].cheese = true;
+                    Grid[1, 3].cheese = true;
+                    Grid[6, 1].cheese = true;
+                    Grid[6, 2].cheese = true;
+                    Grid[6, 7].cheese = true;
+                    Grid[4, 5].cheese = true;
+                    Grid[5, 0].cheese = true;
+                    Grid[7, 6].cheese = true;
+                    Grid[6, 0].cheese = true;
+                    //Display_Board();
+                    do
                     {
-
-                        Move_Number_String = Players[x].Name;
-                        Data_Check_Player_Name(Move_Number_String);
-                        Console.WriteLine("player " + Players[x].Name + " moving");
-                        Move_Player_Number = x;
-
-
-                        Console.WriteLine("enter your players Die roll ");
-                        string Move_Die_roll = Console.ReadLine();
-
-                        Console.WriteLine("enter your player direction ");
-                        string Move_Direction_String = Console.ReadLine();
-                        char Move_Direction = Data_Check_Char(Move_Direction_String);
-
-                        Player_Movement(Move_Player_Number, Data_Check_int(6, 1, Move_Die_roll), Move_Direction);
+                        Display_Board();
+                        //T1
+                        Console.WriteLine("Turn: 1");
+                        Player_Movement(0, 1, 'R');
+                        Player_Movement(1, 6, 'L');
+                        Player_Movement(2, 1, 'U');
+                        Player_Movement(3, 1, 'R');
                         ShowStatus();
-                        Win_Conditon(Move_Player_Number);
+                        //T2
+                        Console.WriteLine("Turn: 2");
+                        Player_Movement(0, 3, 'D');
+                        Player_Movement(1, 3, 'D');
+                        Player_Movement(2, 1, 'U');
+                        Player_Movement(3, 4, 'D');
+                        ShowStatus();
+                        //T3
+                        Console.WriteLine("Turn: 3");
+                        Player_Movement(0, 4, 'R');
+                        Player_Movement(1, 4, 'R');
+                        Player_Movement(2, 1, 'R');
+                        Player_Movement(3, 4, 'R');
+                        ShowStatus();
+                        //T4
+                        Console.WriteLine("Turn: 4");
+                        Player_Movement(0, 2, 'D');
+                        Player_Movement(1, 2, 'D');
+                        Player_Movement(2, 3, 'L');
+                        Player_Movement(3, 2, 'D');
+
+                        Display_Board();
+                    } while (End_Game == false);
+                    string Reset_Prompt = "Dose everybody want to play again? Y/N";
+                    Console.WriteLine("congratulations " + winner + ".");
+                    char Reset_Menu = User_Mode_Data_Check(Reset_Prompt);
+
+                    if (Reset_Menu == 'N')
+                    {
+                        restart = false;
                     }
-
-
-                } while (End_Game == false);
-                //Player_Movement(0, 2, 'e');
-
-            }
-            ShowStatus();
-            Console.ReadLine();
+                }
+                /* 
+               test doc
+               https://github.com/ll01/Cheese_Miner.git
+               */
+            } while (restart == true);
         }
     }
-    /* 
-   test doc
-   https://github.com/ll01/Cheese_Miner.git
-   warp
-   */
 }
